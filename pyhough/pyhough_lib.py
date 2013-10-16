@@ -1,5 +1,6 @@
 import numpy as np
 from . import _pyhough_pywrap
+import time
 
 class Hough(dict):
     def __init__(self, image, drho=None, nrho=None, ntheta=None):
@@ -52,8 +53,10 @@ class Hough(dict):
                                               self.theta,
                                               self.drho,
                                               self.rho)
-        
+
+        t0=time.clock()
         self.image_trans = self._pyhough.transform()
+        print "Runtime: %.2f" % (time.clock() - t0)
 
         # hmmm...
         return self.image_trans,self.theta,self.rho

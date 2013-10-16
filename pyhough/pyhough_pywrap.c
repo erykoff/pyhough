@@ -1,7 +1,7 @@
 #include <Python.h>
 #include <stdbool.h>
 #include "pyhough.h"
-#include <numpy/arrayobject.h> 
+#include <numpy/arrayobject.h>
 
 struct PyHoughObject {
     PyObject_HEAD
@@ -73,13 +73,12 @@ static PyObject *make_transform_image(const struct hough *self) {
 }
 
 static PyObject *PyHoughObject_transform(struct PyHoughObject *self) {
-    printf("Hey!\n");
-
+    
     PyObject *transform = make_transform_image(self->hough);
     unsigned short *data = (unsigned short*) PyArray_DATA(transform);
 
     _hough_transform(self->hough, data);
-    
+
     return transform;
 }
 

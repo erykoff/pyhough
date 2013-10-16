@@ -15,7 +15,7 @@ struct hough *hough_new(long *dims,
 			double *rho) {
     struct hough *self;
 
-    if ((self = calloc(1,sizeof(struct hough))) == NULL) {
+    if ((self = (struct hough *) calloc(1,sizeof(struct hough))) == NULL) {
 	fprintf(stderr,"Failed to allocate struct hough\n");
 	exit(1);
     }
@@ -27,21 +27,21 @@ struct hough *hough_new(long *dims,
     self->nrow = dims[0];
     self->ncol = dims[1];
 
-    if ((self->image = calloc(self->nrow*self->ncol,sizeof(bool))) == NULL) {
+    if ((self->image = (bool *) calloc(self->nrow*self->ncol,sizeof(bool))) == NULL) {
 	fprintf(stderr,"Failed to allocate image memory\n");
 	exit(1);
     }
     memcpy(self->image,image,self->nrow*self->ncol*sizeof(bool));
 
     self->ntheta = ntheta;
-    if ((self->theta = calloc(self->ntheta,sizeof(double))) == NULL) {
+    if ((self->theta = (double *) calloc(self->ntheta,sizeof(double))) == NULL) {
 	fprintf(stderr,"Failed to allocate theta memory\n");
 	exit(1);
     }
     memcpy(self->theta,theta,self->ntheta*sizeof(double));
 
     self->nrho = nrho;
-    if ((self->rho = calloc(self->nrho,sizeof(double))) == NULL) {
+    if ((self->rho = (double *) calloc(self->nrho,sizeof(double))) == NULL) {
 	fprintf(stderr,"Failed to allocate rho memory\n");
 	exit(1);
     }
@@ -57,12 +57,14 @@ struct hough *hough_new(long *dims,
 
 void _hough_transform(struct hough *self, unsigned short *data) {
     //long i,m,n;
-    long i,j,m,n;
+    //long i,j,m,n;
+    long i,j;
     double *costheta,*sintheta;
-    long pind;
-    long rhoprime;
+    //long pind;
+    //long rhoprime;
     long index,max_index;
-    long *pix_indices;
+    long *pix_indices,*pix_m,*pix_n;
+    long offset;
 
     // precalculate cos/sin
     
@@ -81,7 +83,15 @@ void _hough_transform(struct hough *self, unsigned short *data) {
     }
 
     // find the pixels
-    if ((pix_indices = (long *)calloc(self->nrow*self->ncol,sizeof(double))) == NULL) {
+    if ((pix_indices = (long *)calloc(self->nrow*self->ncol,sizeof(long))) == NULL) {
+	fprintf(stderr,"Failed to allocate index memory\n");
+	exit(1);
+    }
+    if ((pix_m = (long *)calloc(self->nrow*self->ncol,sizeof(long))) == NULL) {
+	fprintf(stderr,"Failed to allocate index memory\n");
+	exit(1);
+    }
+    if ((pix_n = (long *)calloc(self->nrow*self->ncol,sizeof(long))) == NULL) {
 	fprintf(stderr,"Failed to allocate index memory\n");
 	exit(1);
     }
@@ -89,57 +99,37 @@ void _hough_transform(struct hough *self, unsigned short *data) {
     index = 0;
     for (i=0;i<self->nrow*self->ncol;i++) {
 	if (self->image[i]) {
-	    pix_indices[index++] = i;
+	    pix_indices[index] = i;
+	    pix_m[index] = i % self->ncol;
+	    pix_n[index++] = i / self->ncol;
 	}
     }
     max_index = index;
 
+    offset = self->nrho / 2;
+    printf("offset = %ld\n",offset);
+
     // loop over good pixels
     for (i=0;i<self->ntheta;i++) {
-	printf(".");
-	fflush(stdout);
+	//printf(".");
+	//fflush(stdout);
 	for (j=0;j<max_index;j++) {
-	    m = pix_indices[j] % self->ncol;
-	    n = pix_indices[j] / self->ncol;
 
-	    rhoprime = (long) round(m*costheta[i] + n*sintheta[i]);
-	    index = (long) round((rhoprime - self->rho[0])/self->drho);
+	    index = (long) round(pix_m[j]*costheta[i] + pix_n[j]*sintheta[i]) + offset;
 	    if ((index >= 0) && (index < self->nrho)) {
 		data[index*self->ntheta + i]++;
 	    }
 	}
     }
-    printf("\n");
-    
-    // loop over each pixel in the theta/rho transform image
-    /*
-    for (i=0;i<self->ntheta;i++) {
-	printf(".");
-	fflush(stdout);
-	// precalculate rhoprime
-	for (m=0;m<self->ncol;m++) {
-	    for (n=0;n<self->nrow;n++) {
-		pind = n*self->ncol + m;
-	
-		if (self->image[pind] > 0) {
-		    rhoprime = (long) round(m*costheta[i] + n*sintheta[i]);
-
-		    index = (long) round((rhoprime - self->rho[0])/self->drho);
-		    if ((index >= 0) && (index < self->nrho)) {
-			data[index*self->ntheta + i]++;
-		    }
-		}
-	    }
-	}
-    }
-    printf("\n");
-    */
     // free sin/cos
     free(costheta);
     free(sintheta);
     free(pix_indices);
+    free(pix_m);
+    free(pix_n);
 
 }
+
 
 struct hough *hough_free(struct hough *self) {
     if (self) {

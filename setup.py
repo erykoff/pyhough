@@ -1,10 +1,17 @@
 import os
 from distutils.core import setup, Extension
 import numpy
+import shutil
+import glob
 
-ext=Extension("pyhough._pyhough_pywrap", 
-              ["pyhough/pyhough_pywrap.c","pyhough/pyhough.c"],
+
+sources = ["pyhough/pyhough_pywrap.c","pyhough/pyhough.c"]
+
+
+ext=Extension("pyhough._pyhough_pywrap",
+              sources,
               extra_compile_args = ['-std=gnu99'])
+
 
 setup(name="pyhough", 
       version="0.0.1",
@@ -13,7 +20,7 @@ setup(name="pyhough",
       author="Eli Rykoff",
       author_email="erykoff@gmail.com",
       ext_modules=[ext],
-      include_dirs=numpy.get_include(),
+      include_dirs=[numpy.get_include()],
       packages=['pyhough'])
 
 
