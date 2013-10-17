@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <limits.h>
+
 #include "pyhough.h"
 
 struct hough *hough_new(long *dims,
@@ -55,38 +56,17 @@ struct hough *hough_new(long *dims,
     return self;
 }
 
+
 void _hough_transform(struct hough *self, unsigned short *data) {
-    //long i,m,n;
-    //long i,j,m,n;
     long i,j;
-    double *costheta,*sintheta;
-    //long pind;
-    //long rhoprime;
+    double costheta,sintheta;
     long index,max_index;
-    long *pix_indices,*pix_m,*pix_n;
+    long *pix_m,*pix_n;
     long offset;
+    double test;
 
-    // precalculate cos/sin
-    
-    if ((costheta = (double *)calloc(self->ntheta,sizeof(double))) == NULL) {
-	fprintf(stderr,"Failed to allocate costheta memory\n");
-	exit(1);
-    }
-    if ((sintheta = (double *)calloc(self->ntheta,sizeof(double))) == NULL ){
-	fprintf(stderr,"Failed to allocate sintheta memory\n");
-	exit(1);
-    }
-
-    for (i=0;i<self->ntheta;i++) {
-	costheta[i] = cos(self->theta[i]);
-	sintheta[i] = sin(self->theta[i]);
-    }
-
+  
     // find the pixels
-    if ((pix_indices = (long *)calloc(self->nrow*self->ncol,sizeof(long))) == NULL) {
-	fprintf(stderr,"Failed to allocate index memory\n");
-	exit(1);
-    }
     if ((pix_m = (long *)calloc(self->nrow*self->ncol,sizeof(long))) == NULL) {
 	fprintf(stderr,"Failed to allocate index memory\n");
 	exit(1);
@@ -99,7 +79,6 @@ void _hough_transform(struct hough *self, unsigned short *data) {
     index = 0;
     for (i=0;i<self->nrow*self->ncol;i++) {
 	if (self->image[i]) {
-	    pix_indices[index] = i;
 	    pix_m[index] = i % self->ncol;
 	    pix_n[index++] = i / self->ncol;
 	}
@@ -107,24 +86,19 @@ void _hough_transform(struct hough *self, unsigned short *data) {
     max_index = index;
 
     offset = self->nrho / 2;
-    printf("offset = %ld\n",offset);
 
     // loop over good pixels
     for (i=0;i<self->ntheta;i++) {
-	//printf(".");
-	//fflush(stdout);
+	costheta = cos(self->theta[i]);
+	sintheta = sin(self->theta[i]);
 	for (j=0;j<max_index;j++) {
 
-	    index = (long) round(pix_m[j]*costheta[i] + pix_n[j]*sintheta[i]) + offset;
-	    if ((index >= 0) && (index < self->nrho)) {
-		data[index*self->ntheta + i]++;
-	    }
+	    // poor man's cheap rounding for positive numbers
+	    index = (long) (pix_m[j]*costheta + pix_n[j]*sintheta + offset + 0.5);
+	    data[index*self->ntheta + i]++;	  
 	}
     }
-    // free sin/cos
-    free(costheta);
-    free(sintheta);
-    free(pix_indices);
+    // free indices
     free(pix_m);
     free(pix_n);
 
