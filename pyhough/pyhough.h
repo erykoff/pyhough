@@ -8,9 +8,7 @@ struct hough {
     bool *image;
     
     long ntheta,nrho;
-    double drho;
     double *theta, *rho;
-    //unsigned short *transform;
 };
 
 
@@ -20,7 +18,6 @@ struct hough *hough_new(long *dims,
 			long ntheta,
 			double *theta,
 			long nrho,
-			double drho,
 			double *rho);
 
 struct hough *hough_free(struct hough *self);

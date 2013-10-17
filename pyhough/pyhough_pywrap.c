@@ -25,14 +25,12 @@ PyHoughObject_init(struct PyHoughObject *self, PyObject *args) {
     bool *image;
     double *theta;
     double *rho;
-    double drho;
     
 
     if (!PyArg_ParseTuple(args,
-			  (char*)"OOdO",
+			  (char*)"OOO",
 			  &image_obj,
 			  &theta_obj,
-			  &drho,
 			  &rho_obj)) {
 	printf("Failed to parse init.\n");
 	return -1;
@@ -48,7 +46,7 @@ PyHoughObject_init(struct PyHoughObject *self, PyObject *args) {
 
     self->hough = hough_new(dims,image,
 			    ntheta,theta,
-			    nrho,drho,rho);
+			    nrho,rho);
 
     if (!self->hough) {
 	return -1;

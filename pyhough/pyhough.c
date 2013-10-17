@@ -12,7 +12,6 @@ struct hough *hough_new(long *dims,
 			long ntheta,
 			double *theta,
 			long nrho,
-			double drho,
 			double *rho) {
     struct hough *self;
 
@@ -48,11 +47,6 @@ struct hough *hough_new(long *dims,
     }
     memcpy(self->rho,rho,self->nrho*sizeof(double));
 
-    //self->drho = self->rho[1] - self->rho[0];
-    self->drho = drho;
-
-    //printf("rhos: %.2f, %.2f, %.2f\n",self->rho[0],self->rho[1],self->rho[2]);
-
     return self;
 }
 
@@ -63,7 +57,6 @@ void _hough_transform(struct hough *self, unsigned short *data) {
     long index,max_index;
     long *pix_m,*pix_n;
     long offset;
-    double test;
 
   
     // find the pixels
