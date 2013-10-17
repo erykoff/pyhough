@@ -1,8 +1,47 @@
+"""
+pyhough
+
+Copyright (C) 2013  Eli Rykoff, SLAC.  erykoff at gmail dot com
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+"""
+
 import numpy as np
 from . import _pyhough_pywrap
 import time
 
 class Hough(dict):
+    """
+    A class to do simple Hough transforms on binary data.
+
+    hough = pyhough.Hough(image,ntheta = None)
+    transform = hough.transform()
+
+    transform[0] : the Hough transform of image
+    transform[1] : the theta (column) values of the transform
+    transform[2] : the rho (row) values of the transform
+
+    Each point in theta/rho space defines a line
+
+    rho = x*cos(theta) + y*sin(theta)
+
+    x, y are defined as 0,0 in the lower-left corner (image coordinates)
+    
+    """
+    
     def __init__(self, image, ntheta=None):
         if image.ndim != 2:
             raise ValueError("Input image must be 2D array")
@@ -27,7 +66,17 @@ class Hough(dict):
     
     def transform(self):
         """
-        Something
+        transform = hough.transform()
+
+        transform[0] : the Hough transform of image
+        transform[1] : the theta (column) values of the transform
+        transform[2] : the rho (row) values of the transform
+        
+        Each point in theta/rho space defines a line
+        
+        rho = x*cos(theta) + y*sin(theta)
+        
+        x, y are defined as 0,0 in the lower-left corner (image coordinates)    
         """
 
         self.theta = np.pi*np.arange(self.ntheta)/self.ntheta
