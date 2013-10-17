@@ -14,7 +14,7 @@ ext=Extension("pyhough._pyhough_pywrap",
 
 
 setup(name="pyhough", 
-      version="0.0.3",
+      version="0.1",
       description="Hough transform in python",
       license = "GPL",
       author="Eli Rykoff",
