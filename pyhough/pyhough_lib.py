@@ -21,6 +21,7 @@ Copyright (C) 2013  Eli Rykoff, SLAC.  erykoff at gmail dot com
 
 import numpy as np
 from . import _pyhough_pywrap
+from . import _pyhoughback_pywrap
 import time
 
 class Hough(dict):
@@ -86,9 +87,44 @@ class Hough(dict):
                                               self.theta,
                                               self.rho)
 
-        t0=time.clock()
+        #t0=time.clock()
         self.image_trans = self._pyhough.transform()
-        print "Runtime: %.2f" % (time.clock() - t0)
+        #print "Runtime: %.2f" % (time.clock() - t0)
 
         # Return transformed image and values
         return self.image_trans,self.theta,self.rho
+
+class Back(dict):
+    """
+    A class to do Hough back projections
+
+    """
+
+    def __init__(self, transform, theta, rho, nx, ny) :
+        if transform.ndim != 2:
+            raise ValueError("Input transform must be 2D array")
+
+        self.transform = transform.astype(np.uint16)
+
+        self.rho = rho
+        self.theta = theta
+        self.nx = nx
+        self.ny = ny
+        self._pyhough_back = None
+
+    def backproject(self):
+        """
+        image = houghback.backproject()
+        """
+
+        self._pyhough_back = _pyhoughback_pywrap.Back(self.transform,
+                                                      self.theta,
+                                                      self.rho,
+                                                      self.nx,
+                                                      self.ny)
+
+        self.image = self._pyhough_back.backproject()
+
+        return self.image
+
+    
