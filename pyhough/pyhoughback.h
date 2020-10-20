@@ -3,8 +3,10 @@
 
 #include <stdbool.h>
 
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+
 struct back {
-    unsigned short *transform;    
+    unsigned short *transform;
     long ntheta,nrho;
     double *theta, *rho;
     long nrow_transform,ncol_transform;
@@ -23,7 +25,6 @@ struct back *back_new(long *dims,
 		      long nrow);
 
 struct back *back_free(struct back *self);
-//struct back *back_backproject(const struct back *self);
 void _backproject(struct back *self, unsigned short *data);
 
 #endif

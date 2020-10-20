@@ -3,33 +3,35 @@
 #include "pyhoughback.h"
 #include <numpy/arrayobject.h>
 
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+
 struct PyBackObject {
     PyObject_HEAD
     struct back* back;
 };
 
-
 static void
 PyBackObject_dealloc(struct PyBackObject* self) {
     self->back = back_free(self->back);
+#if PY_MAJOR_VERSION >= 3
+    Py_TYPE(self)->tp_free((PyObject*)self);
+#else
     self->ob_type->tp_free((PyObject*)self);
+#endif
 }
-
 
 static int
 PyBackObject_init(struct PyBackObject *self, PyObject *args) {
     // write this...
-    PyObject *transform_obj = NULL;
-    PyObject *theta_obj = NULL;
-    PyObject *rho_obj = NULL;
+    PyArrayObject *transform_obj = NULL;
+    PyArrayObject *theta_obj = NULL;
+    PyArrayObject *rho_obj = NULL;
     long ncol, nrow;
 
-    
     npy_intp *dims,ntheta,nrho;
     unsigned short *transform;
     double *theta;
     double *rho;
-    
 
     if (!PyArg_ParseTuple(args,
 			  (char*)"OOOll",
@@ -64,24 +66,29 @@ PyBackObject_init(struct PyBackObject *self, PyObject *args) {
 
 static PyObject *
 PyBackObject_repr(struct PyBackObject *self) {
-    return PyString_FromString("");
+    char repr[256];
+    sprintf(repr, "PyHoughBack Object");
+#if PY_MAJOR_VERSION >= 3
+    return Py_BuildValue("y", repr);
+#else
+    return Py_BuildValue("s", repr);
+#endif
 }
 
-
-static PyObject *make_image(const struct back *self) {
-    PyObject *image = NULL;
+static PyArrayObject *make_image(const struct back *self) {
+    PyArrayObject *image = NULL;
     int ndims=2;
     npy_intp dims[2];
     dims[0] = self->nrow;
     dims[1] = self->ncol;
-    image = PyArray_ZEROS(ndims, dims, NPY_UINT16, 0);
+    image = (PyArrayObject*) PyArray_ZEROS(ndims, dims, NPY_UINT16, 0);
     return image;
 }
 
 
-static PyObject *PyBackObject_backproject(struct PyBackObject *self) {
-    
-    PyObject *image = make_image(self->back);
+static PyArrayObject *PyBackObject_backproject(struct PyBackObject *self) {
+
+    PyArrayObject *image = make_image(self->back);
     unsigned short *data = (unsigned short*) PyArray_DATA(image);
 
     _backproject(self->back, data);
@@ -97,8 +104,12 @@ static PyMethodDef PyBackObject_methods[] = {
 
 
 static PyTypeObject PyBackType = {
+#if PY_MAJOR_VERSION >= 3
+    PyVarObject_HEAD_INIT(NULL, 0)
+#else
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
+#endif
     "_pyhoughback_pywrap.Back",             /*tp_name*/
     sizeof(struct PyBackObject), /*tp_basicsize*/
     0,                         /*tp_itemsize*/
@@ -107,7 +118,6 @@ static PyTypeObject PyBackType = {
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
     0,                         /*tp_compare*/
-    //0,                         /*tp_repr*/
     (reprfunc)PyBackObject_repr,                         /*tp_repr*/
     0,                         /*tp_as_number*/
     0,                         /*tp_as_sequence*/
@@ -134,36 +144,74 @@ static PyTypeObject PyBackType = {
     0,                         /* tp_descr_get */
     0,                         /* tp_descr_set */
     0,                         /* tp_dictoffset */
-    //0,     /* tp_init */
     (initproc)PyBackObject_init,      /* tp_init */
     0,                         /* tp_alloc */
-    //PyPSFExObject_new,                 /* tp_new */
     PyType_GenericNew,                 /* tp_new */
 };
 
 
-static PyMethodDef PyBack_type_methods[] = {
+static PyMethodDef PyBack_module_methods[] = {
     {NULL}  /* Sentinel */
 };
+
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "_pyhoughback_pywrap",      /* m_name */
+    "Back Transforms",  /* m_doc */
+    -1,                        /* m_size */
+    PyBack_module_methods,    /* m_methods */
+    NULL,                      /* m_reload */
+    NULL,                      /* m_traverse */
+    NULL,                      /* m_clear */
+    NULL,                      /* m_free */
+};
+#endif
 
 
 #ifndef PyMODINIT_FUNC  /* declarations for DLL import/export */
 #define PyMODINIT_FUNC void
 #endif
+
 PyMODINIT_FUNC
-init_pyhoughback_pywrap(void) 
+#if PY_MAJOR_VERSION >= 3
+PyInit__pyhoughback_pywrap(void)
+#else
+init_pyhoughback_pywrap(void)
+#endif
 {
     PyObject* m;
 
     PyBackType.tp_new = PyType_GenericNew;
+
+#if PY_MAJOR_VERSION >= 3
+    if (PyType_Ready(&PyBackType) < 0) {
+        return NULL;
+    }
+
+    m = PyModule_Create(&moduledef);
+    if (m==NULL) {
+        return NULL;
+    }
+
+#else
+
     if (PyType_Ready(&PyBackType) < 0)
         return;
 
-    m = Py_InitModule3("_pyhoughback_pywrap", PyBack_type_methods, "Define Back type and methods.");
+    m = Py_InitModule3("_pyhoughback_pywrap", PyBack_module_methods, "Define Back type and methods.");
+    if (m==NULL) {
+        return;
+    }
+#endif
 
     Py_INCREF(&PyBackType);
     PyModule_AddObject(m, "Back", (PyObject *)&PyBackType);
 
     import_array();
+
+#if PY_MAJOR_VERSION >= 3
+    return m;
+#endif
 }
 
